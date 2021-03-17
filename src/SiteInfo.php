@@ -36,6 +36,7 @@ class SiteInfo {
         if (is_multisite()){
             $processdir .= '/' . get_current_blog_id();
             $crawldir .= '/' . get_current_blog_id();
+            $site_url = get_home_url(get_current_blog_id(), '/');
         }
 
         // properties which should not change during plugin execution
@@ -83,8 +84,8 @@ class SiteInfo {
             'child_theme_url' =>
                 trailingslashit( get_stylesheet_directory_uri() ),
             // plugin specific dirs
-            'processed_site' => $processdir,
-            'crawled_site' => $crawldir
+            'processed_site_path' => $processdir,
+            'crawled_site_path' => $crawldir
         ];
     }
 
