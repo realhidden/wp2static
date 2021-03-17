@@ -14,7 +14,7 @@ use RecursiveDirectoryIterator;
 class ProcessedSite {
 
     public static function getPath() : string {
-        return SiteInfo::getPath( 'uploads' ) . 'wp2static-processed-site';
+        return SiteInfo::getPath( 'processed_site' );
     }
 
     /**

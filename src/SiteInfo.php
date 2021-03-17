@@ -29,6 +29,15 @@ class SiteInfo {
         $upload_path_and_url = wp_upload_dir();
         $site_url = trailingslashit( site_url() );
 
+        $processdir = trailingslashit( $upload_path_and_url['basedir'] ) . 'wp2static-processed-site';
+        $crawldir = trailingslashit( $upload_path_and_url['basedir'] ) . 'wp2static-crawled-site';
+
+        // if it's a multisite use blog id in path
+        if (is_multisite()){
+            $processdir .= '/' . get_current_blog_id();
+            $crawldir .= '/' . get_current_blog_id();
+        }
+
         // properties which should not change during plugin execution
         self::$info = [
             // Core
@@ -73,6 +82,9 @@ class SiteInfo {
             'child_theme_path' => trailingslashit( get_stylesheet_directory() ),
             'child_theme_url' =>
                 trailingslashit( get_stylesheet_directory_uri() ),
+            // plugin specific dirs
+            'processed_site' => $processdir,
+            'crawled_site' => $crawldir
         ];
     }
 
