@@ -116,6 +116,9 @@ class Crawler {
             $crawled_contents = (string) $response->getBody();
             $status_code = $response->getStatusCode();
 
+            if ( $status_code === 200 ) {
+                WsLog::l( 'Crawled ' . $root_relative_path );
+            }
             if ( $status_code === 404 ) {
                 WsLog::l( '404 for URL ' . $root_relative_path );
                 CrawlCache::rmUrl( $root_relative_path );
