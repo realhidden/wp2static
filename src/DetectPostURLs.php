@@ -32,7 +32,7 @@ class DetectPostURLs {
                 continue;
             }
 
-            $post_urls[] = $sitemaps_urls[] = '/' . str_replace(
+            $post_urls[] = '/' . str_replace(
                     $wp_site_url,
                     '',
                     $permalink

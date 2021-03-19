@@ -9,7 +9,7 @@ class DetectCustomPostTypeURLs {
      *
      * @return string[] list of URLs
      */
-    public static function detect() : array {
+    public static function detect( string $wp_site_url ) : array {
         global $wpdb;
 
         $post_urls = [];
@@ -32,7 +32,7 @@ class DetectCustomPostTypeURLs {
                 continue;
             }
 
-            $post_urls[] = $sitemaps_urls[] = '/' . str_replace(
+            $post_urls[] = '/' . str_replace(
                     $wp_site_url,
                     '',
                     $permalink
