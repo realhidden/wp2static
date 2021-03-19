@@ -39,6 +39,16 @@ class DetectVendorCache {
                 $path_crawlable =
                     FilesHelper::filePathLooksCrawlable( $filename );
 
+                // ignore w3 total cache local files
+                if (strpos($filename, '/page_enhanced/') !== false) {
+                    continue;
+                }
+                // ignore wp-rocket
+                if (strpos($filename, '/wp-rocket/') !== false) {
+                    continue;
+                }
+
+
                 // Standardise all paths to use / (Windows support)
                 $filename = str_replace( '\\', '/', $filename );
 
