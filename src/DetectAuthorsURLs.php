@@ -9,7 +9,7 @@ class DetectAuthorsURLs {
      *
      * @return string[] list of URLs
      */
-    public static function detect() : array {
+    public static function detect( string $wp_site_url ) : array {
         global $wp_rewrite, $wpdb;
 
         $authors_urls = [];
@@ -24,7 +24,11 @@ class DetectAuthorsURLs {
 
             $permalink = trim( $author_link );
 
-            $authors_urls[] = $permalink;
+            $authors_urls[] = '/' . str_replace(
+                    $wp_site_url,
+                    '',
+                    $permalink
+                );
         }
 
         return $authors_urls;

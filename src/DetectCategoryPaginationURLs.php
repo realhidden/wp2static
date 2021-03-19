@@ -9,7 +9,7 @@ class DetectCategoryPaginationURLs {
      *
      * @return string[] list of URLs
      */
-    public static function detect() : array {
+    public static function detect( string $wp_site_url ) : array {
         global $wp_rewrite, $wpdb;
 
         // first we get each category with total posts as an array
@@ -50,8 +50,11 @@ class DetectCategoryPaginationURLs {
             $total_pages = ceil( $total_posts / $default_posts_per_page );
 
             for ( $page = 1; $page <= $total_pages; $page++ ) {
-                $urls_to_include[] =
-                    "{$term}{$pagination_base}/{$page}/";
+                $urls_to_include[] = str_replace(
+                    $wp_site_url,
+                    '',
+                    "/{$term}{$pagination_base}/{$page}/"
+                );
             }
         }
 

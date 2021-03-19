@@ -15,7 +15,7 @@ class DetectArchiveURLs {
      *
      * @return string[] list of archive URLs
      */
-    public static function detect() : array {
+    public static function detect( string $wp_site_url ) : array {
         global $wpdb;
 
         $archive_urls = [];
@@ -52,9 +52,18 @@ class DetectArchiveURLs {
         $archive_urls_with_markup .=
             is_string( $daily_archives ) ? $daily_archives : '';
 
-        $url_matching_regex = '#\bhttps?://[^,\s()<>]+(?:\([\w\d]+\)|([^,[:punct:]\s]|/))#';
+        $url_matching_regex = '/https?:\/\/(.*)\'/m';
         preg_match_all( $url_matching_regex, $archive_urls_with_markup, $matches );
+        $result = array();
+        foreach($matches[0] as $m1){
+            $result[]= '/' . str_replace(
+                $wp_site_url,
+                '',
+                // remove the ' at the end
+                substr($m1, 0, strlen($m1) - 1)
+            );
+        }
 
-        return $matches[0];
+        return $result;
     }
 }
