@@ -74,6 +74,7 @@ class DetectSitemapsURLs {
 
             // if robots exists, parse for possible sitemaps
             if ( $robots_exists ) {
+                $sitemaps_urls[] = '/' . str_replace($wp_site_url,'',$home_uri . '/robots.txt');
                 $parser->parseRecursive( $home_uri . 'robots.txt' );
                 $sitemaps = $parser->getSitemaps();
             }

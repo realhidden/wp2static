@@ -26,12 +26,14 @@ class URLDetector {
 
         $arrays_to_merge = [];
 
-        // TODO: detect robots.txt, etc before adding
+        // for multisite we cannot crawl the site, since it won't point to the proper home url
+        $site_uri = SiteInfo::getURL( 'site' );
+        $home_uri = rtrim( SiteInfo::getURL( 'home' ), '/' );
+
+        // TODO: detect /favicon.ico + /
         $arrays_to_merge[] = [
-            '/',
-            '/robots.txt',
-            '/favicon.ico',
-            '/sitemap.xml',
+            str_replace($wp_site_url,'',$home_uri . '/'),
+            str_replace($wp_site_url,'',$home_uri . '/favicon.ico')
         ];
 
         /*
