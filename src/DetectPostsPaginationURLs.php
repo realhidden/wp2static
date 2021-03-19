@@ -9,7 +9,7 @@ class DetectPostsPaginationURLs {
      *
      * @return string[] list of URLs
      */
-    public static function detect( string $wp_site_url ) : array {
+    public static function detect( string $wp_site_url, string $wp_home_url ) : array {
         global $wpdb, $wp_rewrite;
 
         $post_urls = [];
@@ -102,10 +102,10 @@ class DetectPostsPaginationURLs {
                         }
                     }
 
-                    $urls_to_include[] = "/{$post_archive_slug}{$pagination_base}/{$page}/";
+                    $urls_to_include[] = "/" . str_replace($wp_site_url, "", $wp_home_url) . "{$post_archive_slug}{$pagination_base}/{$page}/";
                 } else {
                     $urls_to_include[] =
-                        "/{$plural_form}/{$pagination_base}/{$page}/";
+                        "/" . str_replace($wp_site_url, "", $wp_home_url) . "{$plural_form}/{$pagination_base}/{$page}/";
                 }
             }
         }
