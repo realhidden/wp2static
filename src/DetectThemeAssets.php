@@ -16,7 +16,7 @@ class DetectThemeAssets {
         $files = [];
         $template_path = '';
         $template_url = '';
-        $site_path = SiteInfo::getPath( 'site' );
+        $site_url = SiteInfo::getUrl( 'site' );
 
         if ( $theme_type === 'parent' ) {
             $template_path = SiteInfo::getPath( 'parent_theme' );
@@ -42,11 +42,12 @@ class DetectThemeAssets {
                 $filename = str_replace( '\\', '/', $filename );
 
                 $detected_filename =
-                    str_replace(
-                        $site_path,
-                        '/',
-                        $filename
-                    );
+                    str_replace($site_url, '/',
+                        str_replace(
+                            $template_path,
+                            $template_url,
+                            $filename
+                        ));
 
                 if ( $path_crawlable ) {
                     if ( is_string( $detected_filename ) ) {
