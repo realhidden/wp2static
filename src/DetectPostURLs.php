@@ -9,7 +9,7 @@ class DetectPostURLs {
      *
      * @return string[] list of URLs
      */
-    public static function detect() : array {
+    public static function detect( string $wp_site_url ) : array {
         global $wpdb;
 
         $post_urls = [];
@@ -32,7 +32,11 @@ class DetectPostURLs {
                 continue;
             }
 
-            $post_urls[] = $permalink;
+            $post_urls[] = $sitemaps_urls[] = '/' . str_replace(
+                    $wp_site_url,
+                    '',
+                    $permalink
+                );
         }
 
         return $post_urls;

@@ -32,7 +32,11 @@ class DetectCustomPostTypeURLs {
                 continue;
             }
 
-            $post_urls[] = $permalink;
+            $post_urls[] = $sitemaps_urls[] = '/' . str_replace(
+                    $wp_site_url,
+                    '',
+                    $permalink
+                );
         }
 
         return $post_urls;

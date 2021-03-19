@@ -51,15 +51,15 @@ class URLDetector {
         */
 
         if ( CoreOptions::getValue( 'detectPosts' ) ) {
-            $arrays_to_merge[] = DetectPostURLs::detect();
+            $arrays_to_merge[] = DetectPostURLs::detect( SiteInfo::getURL( 'site' ) );
         }
 
         if ( CoreOptions::getValue( 'detectPages' ) ) {
-            $arrays_to_merge[] = DetectPageURLs::detect();
+            $arrays_to_merge[] = DetectPageURLs::detect( SiteInfo::getURL( 'site' ) );
         }
 
         if ( CoreOptions::getValue( 'detectCustomPostTypes' ) ) {
-            $arrays_to_merge[] = DetectCustomPostTypeURLs::detect();
+            $arrays_to_merge[] = DetectCustomPostTypeURLs::detect( SiteInfo::getURL( 'site' ) );
         }
 
         if ( CoreOptions::getValue( 'detectUploads' ) ) {

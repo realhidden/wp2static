@@ -28,7 +28,11 @@ class DetectPageURLs {
                 continue;
             }
 
-            $page_urls[] = $permalink;
+            $page_urls[] = $sitemaps_urls[] = '/' . str_replace(
+                    $wp_site_url,
+                    '',
+                    $permalink
+                );
         }
 
         return $page_urls;
