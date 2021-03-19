@@ -102,7 +102,7 @@ class DetectSitemapsURLs {
                     // add the newly found sitemap
                     $sitemaps_urls[] = '/' . str_replace($wp_site_url,'',$home_uri . $sitemap);
 
-                    $parser->parse( $home_uri . $sitemap );
+                    $parser->parseRecursive( $home_uri . $sitemap );
                     $extract_sitemaps = $parser->getSitemaps();
 
                     foreach ( $extract_sitemaps as $url => $tags ) {
@@ -111,6 +111,16 @@ class DetectSitemapsURLs {
                             '',
                             $url
                         );
+                    }
+
+                    // also add urls from sitemaps
+                    $urls = $parser->getURLs();
+                    foreach ( $urls as $url => $tags ) {
+                        $sitemaps_urls[] = '/' . str_replace(
+                                $wp_site_url,
+                                '',
+                                $url
+                            );
                     }
                 }
             }
