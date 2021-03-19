@@ -18,22 +18,21 @@ class DetectSitemapsURLs {
         $sitemaps_urls = [];
         $parser = new SitemapParser( 'WP2Static.com', [ 'strict' => false ] );
 
-        $site_path = rtrim( SiteInfo::getURL( 'site' ), '/' );
+        // for multisite we cannot crawl the site, since it won't point to the proper home url
+        $home_uri = rtrim( SiteInfo::getURL( 'home' ), '/' );
 
         $port_override = apply_filters(
             'wp2static_curl_port',
             null
         );
 
-        $base_uri = $site_path;
-
+        // TODO: port override won't work if we have a subdir
         if ( $port_override ) {
-            $base_uri = "{$base_uri}:{$port_override}";
+            $home_uri = "{$home_uri}:{$port_override}";
         }
 
         $client = new Client(
             [
-                'base_uri' => $base_uri,
                 'verify' => false,
                 'http_errors' => false,
                 'allow_redirects' => [
@@ -64,7 +63,7 @@ class DetectSitemapsURLs {
             }
         }
 
-        $request = new Request( 'GET', '/robots.txt', $headers );
+        $request = new Request( 'GET', $home_uri . '/robots.txt', $headers );
 
         $response = $client->send( $request );
 
@@ -75,7 +74,7 @@ class DetectSitemapsURLs {
 
             // if robots exists, parse for possible sitemaps
             if ( $robots_exists ) {
-                $parser->parseRecursive( $wp_site_url . 'robots.txt' );
+                $parser->parseRecursive( $home_uri . 'robots.txt' );
                 $sitemaps = $parser->getSitemaps();
             }
 
@@ -94,21 +93,15 @@ class DetectSitemapsURLs {
                     continue;
                 }
 
-                $request = new Request( 'GET', $sitemap, $headers );
-
+                $request = new Request( 'GET', $home_uri . $sitemap, $headers );
                 $response = $client->send( $request );
 
                 $status_code = $response->getStatusCode();
-
                 if ( $status_code === 200 ) {
-                    $parser->parse( $wp_site_url . $sitemap );
+                    // add the newly found sitemap
+                    $sitemaps_urls[] = '/' . str_replace($wp_site_url,'',$home_uri . $sitemap);
 
-                    $sitemaps_urls[] = '/' . str_replace(
-                        $wp_site_url,
-                        '',
-                        $sitemap
-                    );
-
+                    $parser->parse( $home_uri . $sitemap );
                     $extract_sitemaps = $parser->getSitemaps();
 
                     foreach ( $extract_sitemaps as $url => $tags ) {

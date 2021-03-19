@@ -28,6 +28,7 @@ class SiteInfo {
     public function __construct() {
         $upload_path_and_url = wp_upload_dir();
         $site_url = trailingslashit( site_url() );
+        $home_url = trailingslashit( get_home_url() );
 
         $processdir = trailingslashit( $upload_path_and_url['basedir'] ) . 'wp2static-processed-site';
         $crawldir = trailingslashit( $upload_path_and_url['basedir'] ) . 'wp2static-crawled-site';
@@ -36,7 +37,7 @@ class SiteInfo {
         if (is_multisite()){
             $processdir .= '/' . get_current_blog_id();
             $crawldir .= '/' . get_current_blog_id();
-            $site_url = get_home_url(get_current_blog_id(), '/');
+            $site_url = trailingslashit( network_home_url( '' ) );
         }
 
         // properties which should not change during plugin execution
@@ -49,7 +50,7 @@ class SiteInfo {
                 Note:  'home_path' => get_home_path(),
                 // errors trying to find it in WP2Static\get_home_path()...
             */
-            'home_url' => trailingslashit( get_home_url() ),
+            'home_url' => $home_url,
             'includes_path' => trailingslashit( ABSPATH . WPINC ),
             'includes_url' => includes_url(),
 
