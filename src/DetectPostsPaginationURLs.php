@@ -12,6 +12,18 @@ class DetectPostsPaginationURLs {
     public static function detect( string $wp_site_url, string $wp_home_url ) : array {
         global $wpdb, $wp_rewrite;
 
+        // get "non-public" post types
+        $non_public_post_types = array_merge(
+            get_post_types(array(
+                'public' => false,
+                '_builtin' => true
+            ), 'names'),
+            get_post_types(array(
+                'public' => false,
+                '_builtin' => false
+            ), 'names'),
+            array('revision', 'nav_menu_item'));
+
         $post_urls = [];
         $unique_post_types = [];
 
@@ -19,15 +31,13 @@ class DetectPostsPaginationURLs {
             SELECT ID,post_type
             FROM %s
             WHERE post_status = '%s'
-            AND post_type NOT IN ('%s','%s')";
+            AND post_type NOT IN ('".implode("','",$non_public_post_types)."')";
 
         $posts = $wpdb->get_results(
             sprintf(
                 $query,
                 $wpdb->posts,
-                'publish',
-                'revision',
-                'nav_menu_item'
+                'publish'
             )
         );
 
