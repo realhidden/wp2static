@@ -232,7 +232,23 @@ class SitemapParser {
             if ( ! isset( $this->config['guzzle']['headers']['User-Agent'] ) ) {
                 $this->config['guzzle']['headers']['User-Agent'] = $this->user_agent;
             }
-            $client = new WP2StaticGuzzleHttp\Client();
+            $client = new WP2StaticGuzzleHttp\Client([
+                'verify' => false,
+                'http_errors' => false,
+                'allow_redirects' => [
+                    'max' => 1,
+                    // required to get effective_url
+                    'track_redirects' => true,
+                ],
+                'connect_timeout'  => 0,
+                'timeout' => 600,
+                'headers' => [
+                    'User-Agent' => apply_filters(
+                        'wp2static_curl_user_agent',
+                        'WP2Static.com',
+                    ),
+                ],
+            ]);
             $res = $client->request( 'GET', $this->current_url, $this->config['guzzle'] );
             return $res->getBody()->getContents();
         } catch ( WP2StaticGuzzleHttp\Exception\TransferException $e ) {
