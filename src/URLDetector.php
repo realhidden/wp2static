@@ -32,8 +32,8 @@ class URLDetector {
 
         // TODO: detect /favicon.ico + /
         $arrays_to_merge[] = [
-            str_replace($wp_site_url,'',$home_uri . '/'),
-            str_replace($wp_site_url,'',$home_uri . '/favicon.ico')
+            '/' . str_replace($site_uri, '', $home_uri . '/'),
+            '/' . str_replace($site_uri, '', $home_uri . '/favicon.ico')
         ];
 
         /*
