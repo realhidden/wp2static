@@ -36,6 +36,14 @@ class DetectPluginAssets {
                 $active_plugins
             );
 
+            $active_network_plugins = get_site_option('active_sitewide_plugins');
+            $active_network_plugin_dirs = array_map(
+                function ( $active_plugin ) {
+                    return explode( '/', $active_plugin )[0];
+                },
+                $active_network_plugins
+            );
+
             foreach ( $iterator as $filename => $file_object ) {
                 $path_crawlable =
                     FilesHelper::filePathLooksCrawlable( $filename );
@@ -47,7 +55,9 @@ class DetectPluginAssets {
                 $matches_active_plugin_dir =
                     ( str_replace( $active_plugin_dirs, '', $filename ) !== $filename );
 
-                if ( ! $matches_active_plugin_dir ) {
+                $matches_active_network_plugin_dir =
+                    ( str_replace( $active_network_plugin_dirs, '', $filename ) !== $filename );
+                if ( ! $matches_active_plugin_dir && ! $matches_active_network_plugin_dir ) {
                     continue;
                 }
 
