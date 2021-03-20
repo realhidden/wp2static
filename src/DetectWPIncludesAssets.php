@@ -18,7 +18,7 @@ class DetectWPIncludesAssets {
 
         $includes_path = SiteInfo::getPath( 'includes' );
         $includes_url = SiteInfo::getUrl( 'includes' );
-        $home_url = SiteInfo::getUrl( 'home' );
+        $site_url = SiteInfo::getUrl( 'site' );
 
         if ( is_dir( $includes_path ) ) {
             $iterator = new RecursiveIteratorIterator(
@@ -36,18 +36,12 @@ class DetectWPIncludesAssets {
                 $filename = str_replace( '\\', '/', $filename );
 
                 $detected_filename =
-                    str_replace(
-                        $includes_path,
-                        $includes_url,
-                        $filename
-                    );
-
-                $detected_filename =
-                    str_replace(
-                        $home_url,
-                        '',
-                        $detected_filename
-                    );
+                    str_replace($site_url, '/',
+                        str_replace(
+                            $includes_path,
+                            $includes_url,
+                            $filename
+                        ));
 
                 if ( ! is_string( $detected_filename ) ) {
                     continue;
