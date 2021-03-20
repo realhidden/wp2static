@@ -17,6 +17,8 @@ class DetectPluginAssets {
 
         $plugins_path = SiteInfo::getPath( 'plugins' );
         $plugins_url = SiteInfo::getUrl( 'plugins' );
+        $muplugins_path = SiteInfo::getPath( 'muplugins' );
+        $muplugins_url = SiteInfo::getUrl( 'muplugins' );
         $site_url = SiteInfo::getUrl( 'site' );
 
         if ( is_dir( $plugins_path ) ) {
@@ -36,7 +38,7 @@ class DetectPluginAssets {
                 $active_plugins
             );
 
-            $active_network_plugins = get_site_option('active_sitewide_plugins');
+            $active_network_plugins = array_keys(get_site_option('active_sitewide_plugins'));
             $active_network_plugin_dirs = array_map(
                 function ( $active_plugin ) {
                     return explode( '/', $active_plugin )[0];
@@ -57,6 +59,7 @@ class DetectPluginAssets {
 
                 $matches_active_network_plugin_dir =
                     ( str_replace( $active_network_plugin_dirs, '', $filename ) !== $filename );
+
                 if ( ! $matches_active_plugin_dir && ! $matches_active_network_plugin_dir ) {
                     continue;
                 }
@@ -69,6 +72,45 @@ class DetectPluginAssets {
                         str_replace(
                             $plugins_path,
                             $plugins_url,
+                            $filename
+                        ));
+
+                if ( is_string( $detected_filename ) ) {
+                    array_push(
+                        $files,
+                        $detected_filename
+                    );
+                }
+            }
+        }
+
+        // add mu plugins
+        if ( is_dir( $muplugins_path ) ) {
+            $iterator = new RecursiveIteratorIterator(
+                new RecursiveDirectoryIterator(
+                    $muplugins_path,
+                    RecursiveDirectoryIterator::SKIP_DOTS
+                )
+            );
+
+            // no need for filtering, mu plugins are always on
+
+            foreach ( $iterator as $filename => $file_object ) {
+                $path_crawlable =
+                    FilesHelper::filePathLooksCrawlable( $filename );
+
+                if ( ! $path_crawlable ) {
+                    continue;
+                }
+
+                // Standardise all paths to use / (Windows support)
+                $filename = str_replace( '\\', '/', $filename );
+
+                $detected_filename =
+                    str_replace($site_url, '/',
+                        str_replace(
+                            $muplugins_path,
+                            $muplugins_url,
                             $filename
                         ));
 
