@@ -45,6 +45,12 @@ class FilesHelper {
 
         $site_path = SiteInfo::getPath( 'site' );
 
+        // if this is a multisite AND the url is not included in the site path
+        // ignore the uploads dir
+        if (strpos($dir,$site_path) === false){
+            return $files;
+        }
+
         if ( is_dir( $dir ) ) {
             $iterator = new RecursiveIteratorIterator(
                 new RecursiveDirectoryIterator(
