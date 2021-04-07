@@ -628,35 +628,68 @@ class Controller {
     }
 
     public static function wp2staticHeadless() : void {
-        WsLog::l( 'Running WP2Static in Headless mode' );
-        WsLog::l( 'Starting URL detection' );
-        $detected_count = URLDetector::detectURLs();
-        WsLog::l( "URL detection completed ($detected_count URLs detected)" );
+        global $wpdb;
+        $stage = null;
 
-        self::wp2staticCrawl();
-
-        WsLog::l( 'Starting post-processing' );
-        $post_processor = new PostProcessor();
-        $processed_site_dir =
-            SiteInfo::getPath( 'processed_site' ) ;
-        $processed_site = new ProcessedSite();
-        $post_processor->processStaticSite( StaticSite::getPath() );
-        WsLog::l( 'Post-processing completed' );
-
-        $deployer = Addons::getDeployer();
-
-        if ( ! $deployer ) {
-            WsLog::l( 'No deployment add-ons are enabled, skipping deployment.' );
-        } else {
-            WsLog::l( 'Starting deployment' );
-            do_action(
-                'wp2static_deploy',
-                ProcessedSite::getPath(),
-                $deployer
-            );
+        if (isset($_REQUEST['stage'])){
+            $stage = (int)$_REQUEST['stage'];
         }
-        WsLog::l( 'Starting post-deployment actions' );
-        do_action( 'wp2static_post_deploy_trigger', $deployer );
+
+        WsLog::l( 'Running WP2Static in Headless mode' );
+        if (is_null($stage) || $stage === 1) {
+            WsLog::l('Starting URL detection');
+            $detected_count = URLDetector::detectURLs();
+            WsLog::l("URL detection completed ($detected_count URLs detected)");
+        }
+
+        if (is_null($stage) || $stage === 2) {
+            self::wp2staticCrawl();
+        }
+
+        if (is_null($stage) || $stage === 3) {
+            WsLog::l('Starting post-processing');
+            $post_processor = new PostProcessor();
+            $processed_site_dir =
+                SiteInfo::getPath( 'processed_site' ) ;
+            $processed_site = new ProcessedSite();
+            $post_processor->processStaticSite( StaticSite::getPath() );
+            WsLog::l( 'Post-processing completed' );
+        }
+
+        if (is_null($stage) || $stage === 4) {
+            $deployer = Addons::getDeployer();
+
+            if (!$deployer) {
+                WsLog::l('No deployment add-ons are enabled, skipping deployment.');
+            } else {
+                WsLog::l('Starting deployment');
+                do_action(
+                    'wp2static_deploy',
+                    ProcessedSite::getPath(),
+                    $deployer
+                );
+            }
+        }
+        if (is_null($stage) || $stage === 5) {
+            WsLog::l('Starting post-deployment actions');
+            do_action('wp2static_post_deploy_trigger', $deployer);
+        }
+
+
+        // return stats in case of ajax call
+        $stats = array(
+            'crawl_count' => 0,
+        );
+        $table_name = $wpdb->prefix . 'wp2static_urls';
+        $rows = $wpdb->get_results("SELECT COUNT(id) as crawl_count FROM $table_name", ARRAY_A);
+        if (count($rows) === 1) {
+            $stats['crawl_count'] = (int)$rows[0]['crawl_count'];
+        }
+
+        if (!headers_sent()) {
+            header('Content-Type: application/json; charset=' . get_option('blog_charset'));
+        }
+        echo(json_encode($stats));
     }
 
     public static function invalidateSingleURLCache(

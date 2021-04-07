@@ -49,15 +49,13 @@ class PostProcessor {
             )
         );
 
+        $file_processor = new FileProcessor();
         foreach ( $iterator as $filename => $file_object ) {
             $save_path = str_replace( $static_site_path, '', $filename );
 
             // copy file to ProcessedSite dir, then process it
             // this allows external processors to have their way with it
             ProcessedSite::add( $filename, $save_path );
-
-            $file_processor = new FileProcessor();
-
             $file_processor->processFile( ProcessedSite::getPath() . $save_path );
         }
 

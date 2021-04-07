@@ -12,6 +12,8 @@ use WP2StaticGuzzleHttp\Client;
 use WP2StaticGuzzleHttp\Psr7\Request;
 use WP2StaticGuzzleHttp\Psr7\Response;
 use Psr\Http\Message\ResponseInterface;
+use WP2StaticGuzzleHttp\Exception\ClientException;
+
 
 define( 'WP2STATIC_REDIRECT_CODES', [ 301, 302, 303, 307, 308 ] );
 
@@ -76,10 +78,26 @@ class Crawler {
      * Crawls URLs in WordPressSite, saving them to StaticSite
      */
     public function crawlSite( string $static_site_path ) : void {
+        global $wpdb;
         $crawled = 0;
         $cache_hits = 0;
 
-        WsLog::l( 'Starting to crawl detected URLs.' );
+        // Add some limits for the crawler if present
+        $offset = null;
+        $limit = null;
+
+        if (isset($_REQUEST['offset'])){
+            $offset = (int)$_REQUEST['offset'];
+        }
+        if (isset($_REQUEST['limit'])){
+            $limit = (int)$_REQUEST['limit'];
+        }
+
+        if (!is_null($offset) && !is_null($limit)) {
+            WsLog::l("Starting to crawl detected URLs ($offset - $limit)");
+        }else{
+            WsLog::l('Starting to crawl detected URLs.');
+        }
 
         $site_host = parse_url( $this->site_path, PHP_URL_HOST );
         $site_port = parse_url( $this->site_path, PHP_URL_PORT );
@@ -102,7 +120,7 @@ class Crawler {
          * To avoid that you need to assing the result to a variable.
          */
 
-        $crawlable_paths = CrawlQueue::getCrawlablePaths();
+        $crawlable_paths = CrawlQueue::getCrawlablePaths($offset, $limit);
         foreach ( $crawlable_paths as $root_relative_path ) {
             $absolute_uri = new URL( $this->site_path . $root_relative_path );
             $url = $absolute_uri->get();
@@ -221,9 +239,11 @@ class Crawler {
         }
 
         $request = new Request( 'GET', $url, $headers );
-
-        $response = $this->client->send( $request );
-
+        try {
+            $response = $this->client->send( $request );
+        } catch (WP2StaticGuzzleHttp\Exception\ClientException $e) {
+            $response = $e->getResponse();
+        }
         return $response;
     }
 }
