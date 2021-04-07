@@ -55,8 +55,9 @@ class Crawler {
                     // required to get effective_url
                     'track_redirects' => true,
                 ],
-                'connect_timeout'  => 0,
-                'timeout' => 600,
+                'connect_timeout' => 30,
+                'timeout' => 30,
+                'read_timeout' => 30,
                 'headers' => [
                     'User-Agent' => apply_filters(
                         'wp2static_curl_user_agent',
@@ -128,6 +129,7 @@ class Crawler {
             $response = $this->crawlURL( $url );
 
             if ( ! $response ) {
+                WsLog::l( 'Error for URL ' . $root_relative_path );
                 continue;
             }
 
@@ -243,6 +245,8 @@ class Crawler {
             $response = $this->client->send( $request );
         } catch (WP2StaticGuzzleHttp\Exception\ClientException $e) {
             $response = $e->getResponse();
+        } catch (\Exception $e) {
+            return null;
         }
         return $response;
     }
