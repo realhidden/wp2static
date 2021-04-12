@@ -6,21 +6,7 @@ $run_nonce = wp_create_nonce( 'wp2static-run-page' );
 ?>
 
 <script type="text/javascript">
-var latest_log_row = 0;
-
 jQuery(document).ready(function($){
-    var run_data = {
-        action: 'wp2static_run',
-        security: '<?php echo $run_nonce; ?>',
-    };
-
-    var log_data = {
-        dataType: 'text',
-        action: 'wp2static_poll_log',
-        startRow: latest_log_row,
-        security: '<?php echo $run_nonce; ?>',
-    };
-
     function responseErrorHandler( jqXHR, textStatus, errorThrown ) {
         $("#wp2static-spinner").removeClass("is-active");
         $("#wp2static-run" ).prop('disabled', false);
@@ -33,16 +19,14 @@ Please check your server's error logs or try increasing your max_execution_time 
 More information of the error may be logged in your browser's console.`);
     }
 
-    function pollLogs() {
-        $.post(ajaxurl, log_data, function(response) {
-            $('#wp2static-run-log').val(response);
-            $("#wp2static-poll-logs" ).prop('disabled', false);
-        });
-    }
-
     $( "#wp2static-run" ).click(function() {
         $("#wp2static-spinner").addClass("is-active");
         $("#wp2static-run" ).prop('disabled', true);
+
+        var run_data = {
+            action: 'wp2static_run',
+            security: '<?php echo $run_nonce; ?>',
+        };
 
         var stage = $("#wp2static-stage").val();
         if (stage === 'null') {
@@ -69,7 +53,6 @@ More information of the error may be logged in your browser's console.`);
             success: function() {
                 $("#wp2static-spinner").removeClass("is-active");
                 $("#wp2static-run" ).prop('disabled', false);
-                pollLogs();
             },
             error: responseErrorHandler
         });
@@ -78,7 +61,27 @@ More information of the error may be logged in your browser's console.`);
 
     $( "#wp2static-poll-logs" ).click(function() {
         $("#wp2static-poll-logs" ).prop('disabled', true);
-        pollLogs();
+        $.post(ajaxurl, {
+            dataType: 'text',
+            action: 'wp2static_poll_log',
+            startRow: 0,
+            security: '<?php echo $run_nonce; ?>',
+        }, function(response) {
+            $('#wp2static-run-log').val(response);
+            $("#wp2static-poll-logs" ).prop('disabled', false);
+        });
+    });
+
+    $( "#wp2static-clear-logs" ).click(function() {
+        $("#wp2static-clear-logs" ).prop('disabled', true);
+        $.post(ajaxurl, {
+            dataType: 'text',
+            action: 'wp2static_clear_log',
+            security: '<?php echo $run_nonce; ?>',
+        }, function(response) {
+            $('#wp2static-run-log').val(response);
+            $("#wp2static-clear-logs" ).prop('disabled', false);
+        });
     });
 });
 </script>
@@ -92,7 +95,7 @@ More information of the error may be logged in your browser's console.`);
         <option value="2">Crawl</option>
         <option value="3">Post process</option>
         <option value="4">Deploy</option>
-        <option value="4">Post deploy action</option>
+        <option value="5">Post deploy action</option>
     </select>
     <input type="text" placeholder="offset" id="wp2static-offset">
     <input type="text" placeholder="limit" id="wp2static-limit">
@@ -104,6 +107,7 @@ More information of the error may be logged in your browser's console.`);
     <br>
 
     <button class="button" id="wp2static-poll-logs">Refresh logs</button>
+    <button class="button" id="wp2static-clear-logs">Clear logs</button>
     <br>
     <br>
     <textarea id="wp2static-run-log" rows=30 style="width:99%;">

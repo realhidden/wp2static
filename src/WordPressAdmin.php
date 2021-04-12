@@ -65,6 +65,13 @@ class WordPressAdmin {
         );
 
         add_action(
+            'wp_ajax_wp2static_clear_log',
+            [ Controller::class, 'wp2staticClearLog' ],
+            10,
+            0
+        );
+
+        add_action(
             'admin_post_wp2static_ui_save_options',
             [ Controller::class, 'wp2staticUISaveOptions' ],
             10,

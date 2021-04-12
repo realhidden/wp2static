@@ -804,4 +804,15 @@ class Controller {
 
         wp_die();
     }
+
+    /**
+     * Give logs to UI
+     */
+    public static function wp2staticClearLog() : void {
+        check_ajax_referer( 'wp2static-run-page', 'security' );
+        WsLog::truncate();
+        $logs = WsLog::poll();
+        echo $logs;
+        wp_die();
+    }
 }
