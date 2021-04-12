@@ -122,52 +122,98 @@ class Crawler {
          */
 
         $crawlable_paths = CrawlQueue::getCrawlablePaths($offset, $limit);
+        $site_url = SiteInfo::getUrl( 'site' );
+        $site_dir = SiteInfo::getPath('site');
+        $upload_url = SiteInfo::getUrl( 'uploads' );
+        $upload_dir = SiteInfo::getPath( 'uploads' );
+
+        // get difference between home and uploads URL
+        $uploads_prefix = str_replace(
+            $site_url,
+            '/',
+            $upload_url
+        );
+
         foreach ( $crawlable_paths as $root_relative_path ) {
-            $absolute_uri = new URL( $this->site_path . $root_relative_path );
-            $url = $absolute_uri->get();
+            $crawled_contents = '';
+            $page_hash = '';
 
-            $response = $this->crawlURL( $url );
+            $file_shortcut = null;
 
-            if ( ! $response ) {
-                WsLog::l( 'Error for URL ' . $root_relative_path );
-                continue;
+            // Shortcut for "uploads" dir, it should only contain non-php files anyway
+            if (substr($root_relative_path, 0, strlen($uploads_prefix)) === $uploads_prefix) {
+                $file = $upload_dir . substr($root_relative_path, strlen($uploads_prefix));
+                if (file_exists($file)) {
+                    $file_shortcut = $file;
+                }
+                // Shortcut for any file, that looks crawlable using simple file_get_contents
+            } elseif (strpos($root_relative_path, ".php") === FALSE) {
+                $file = realpath($site_dir . $root_relative_path);
+                if ((substr($file, 0, strlen($site_dir)) === $site_dir) && file_exists($file))
+                    $file_shortcut = $file;
             }
 
-            $crawled_contents = (string) $response->getBody();
-            $status_code = $response->getStatusCode();
-
-            if ( $status_code === 200 ) {
-                WsLog::l( 'Crawled ' . $root_relative_path );
+            // preflight for shortcut
+            if (!is_null($file_shortcut)){
+                // just to doublecheck we are NOT loading a <?php file
+                $crawled_contents = file_get_contents($file_shortcut);
+                if (stripos('<?php',$crawled_contents) !== FALSE){
+                    // fall back to URL based data grab
+                    $file_shortcut = null;
+                    $crawled_contents = '';
+                }else {
+                    $page_hash = md5_file($file_shortcut);
+                }
             }
-            if ( $status_code === 404 ) {
-                WsLog::l( '404 for URL ' . $root_relative_path );
-                CrawlCache::rmUrl( $root_relative_path );
-                $crawled_contents = null;
-            } elseif ( in_array( $status_code, WP2STATIC_REDIRECT_CODES ) ) {
-                $crawled_contents = null;
-            }
 
-            $redirect_to = null;
+            if (!is_null($file_shortcut)){
+                WsLog::l('File shortcut for ' . $root_relative_path);
+            }else {
+                $absolute_uri = new URL( $this->site_path . $root_relative_path );
+                $url = $absolute_uri->get();
+                $response = $this->crawlURL($url);
 
-            if ( in_array( $status_code, WP2STATIC_REDIRECT_CODES ) ) {
-                $effective_url = $url;
-
-                // returns as string
-                $redirect_history =
-                    $response->getHeaderLine( 'X-Guzzle-Redirect-History' );
-
-                if ( $redirect_history ) {
-                    $redirects = explode( ', ', $redirect_history );
-                    $effective_url = end( $redirects );
+                if (!$response) {
+                    WsLog::l('Error for URL ' . $root_relative_path);
+                    continue;
                 }
 
-                $redirect_to =
-                    (string) str_replace( $site_urls, '', $effective_url );
-                $page_hash = md5( $status_code . $redirect_to );
-            } elseif ( ! is_null( $crawled_contents ) ) {
-                $page_hash = md5( $crawled_contents );
-            } else {
-                $page_hash = md5( (string) $status_code );
+                $crawled_contents = (string)$response->getBody();
+                $status_code = $response->getStatusCode();
+
+                if ($status_code === 200) {
+                    WsLog::l('Crawled ' . $root_relative_path);
+                }
+                if ($status_code === 404) {
+                    WsLog::l('404 for URL ' . $root_relative_path);
+                    CrawlCache::rmUrl($root_relative_path);
+                    $crawled_contents = null;
+                } elseif (in_array($status_code, WP2STATIC_REDIRECT_CODES)) {
+                    $crawled_contents = null;
+                }
+
+                $redirect_to = null;
+
+                if (in_array($status_code, WP2STATIC_REDIRECT_CODES)) {
+                    $effective_url = $url;
+
+                    // returns as string
+                    $redirect_history =
+                        $response->getHeaderLine('X-Guzzle-Redirect-History');
+
+                    if ($redirect_history) {
+                        $redirects = explode(', ', $redirect_history);
+                        $effective_url = end($redirects);
+                    }
+
+                    $redirect_to =
+                        (string)str_replace($site_urls, '', $effective_url);
+                    $page_hash = md5($status_code . $redirect_to);
+                } elseif (!is_null($crawled_contents)) {
+                    $page_hash = md5($crawled_contents);
+                } else {
+                    $page_hash = md5((string)$status_code);
+                }
             }
 
             // TODO: as John mentioned, we're only skipping the saving,
