@@ -64,7 +64,7 @@ class CrawlQueue {
      *
      *  @return string[] All crawlable URLs
      */
-    public static function getCrawlablePaths($offset, $limit) : array {
+    public static function getCrawlablePaths($offset = null, $limit = null) : array {
         global $wpdb;
         $urls = [];
 
