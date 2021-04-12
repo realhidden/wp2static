@@ -47,6 +47,10 @@ class DetectVendorCache {
                 if (strpos($filename, '/wp-rocket/') !== false) {
                     continue;
                 }
+                // ignore autoptimize
+                if (strpos($filename, '/autoptimize/') !== false) {
+                    continue;
+                }
 
 
                 // Standardise all paths to use / (Windows support)

@@ -18,6 +18,7 @@ class DetectVendorFiles {
         $vendor_files = [];
 
         // cache dir used by Autoptimize and other themes/plugins
+        /* THIS PART IS MOVED TO POST PROCESSING STEP
         $vendor_cache_dir =
             SiteInfo::getPath( 'content' ) . 'cache/';
 
@@ -40,6 +41,7 @@ class DetectVendorFiles {
 
             $vendor_files = array_merge( $vendor_files, $vendor_cache_urls );
         }
+        */
 
         if ( class_exists( 'Custom_Permalinks' ) ) {
             global $wpdb;

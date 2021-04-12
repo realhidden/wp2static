@@ -34,6 +34,8 @@ class PostProcessor {
             'Processing crawled site.'
         );
 
+        $file_processor = new FileProcessor();
+
         if ( ! is_dir( $static_site_path ) ) {
             WsLog::l(
                 'No static site directory to process.'
@@ -49,7 +51,6 @@ class PostProcessor {
             )
         );
 
-        $file_processor = new FileProcessor();
         foreach ( $iterator as $filename => $file_object ) {
             $save_path = str_replace( $static_site_path, '', $filename );
 
@@ -57,6 +58,26 @@ class PostProcessor {
             // this allows external processors to have their way with it
             ProcessedSite::add( $filename, $save_path );
             $file_processor->processFile( ProcessedSite::getPath() . $save_path );
+        }
+
+        // Post process cache dir as well
+        $wp_content_dir = SiteInfo::getPath('content');
+        $wp_content_relative_url = str_replace(SiteInfo::getUrl('site'), '', SiteInfo::getUrl('content'));
+        if (is_dir($wp_content_dir)) {
+            $iterator = new RecursiveIteratorIterator(
+                new RecursiveDirectoryIterator(
+                    $wp_content_dir . 'cache/',
+                    RecursiveDirectoryIterator::SKIP_DOTS
+                )
+            );
+
+            foreach ($iterator as $filename => $file_object) {
+                $save_path = '/' . str_replace($wp_content_dir, $wp_content_relative_url, $filename);
+                // copy file to ProcessedSite dir, then process it
+                // this allows external processors to have their way with it
+                ProcessedSite::add( $filename, $save_path );
+                $file_processor->processFile( ProcessedSite::getPath() . $save_path );
+            }
         }
 
         WsLog::l( 'Finished processing crawled site.' );
