@@ -124,15 +124,32 @@ class Crawler {
         $crawlable_paths = CrawlQueue::getCrawlablePaths($offset, $limit);
         $site_url = SiteInfo::getUrl( 'site' );
         $site_dir = SiteInfo::getPath('site');
-        $upload_url = SiteInfo::getUrl( 'uploads' );
-        $upload_dir = SiteInfo::getPath( 'uploads' );
 
-        // get difference between home and uploads URL
-        $uploads_prefix = str_replace(
-            $site_url,
-            '/',
-            $upload_url
+        // grab safe locations
+        $safe_locations = array(
+            array(
+                "prefix" => str_replace($site_url, '/', SiteInfo::getUrl('uploads')),
+                "dir" => $upload_dir = SiteInfo::getPath('uploads')
+            ),
+            array(
+                "prefix" => str_replace($site_url, '/', SiteInfo::getUrl('includes')),
+                "dir" => $upload_dir = SiteInfo::getPath('includes')
+            ),
+            array(
+                "prefix" => str_replace($site_url, '/', SiteInfo::getUrl('plugins')),
+                "dir" => $upload_dir = SiteInfo::getPath('plugins')
+            ),
+            array(
+                "prefix" => str_replace($site_url, '/', SiteInfo::getUrl('muplugins')),
+                "dir" => $upload_dir = SiteInfo::getPath('muplugins')
+            ),
+            array(
+                "prefix" => str_replace($site_url, '/', SiteInfo::getUrl('themes_root')),
+                "dir" => $upload_dir = SiteInfo::getPath('themes_root')
+            )
         );
+        // get difference between home and uploads URL
+
 
         foreach ( $crawlable_paths as $root_relative_path ) {
             $crawled_contents = '';
@@ -140,17 +157,14 @@ class Crawler {
 
             $file_shortcut = null;
 
-            // Shortcut for "uploads" dir, it should only contain non-php files anyway
-            if (substr($root_relative_path, 0, strlen($uploads_prefix)) === $uploads_prefix) {
-                $file = $upload_dir . substr($root_relative_path, strlen($uploads_prefix));
-                if (file_exists($file)) {
-                    $file_shortcut = $file;
+            // Shortcut for safe locations
+            foreach ($safe_locations as $s1) {
+                if (substr($root_relative_path, 0, strlen($s1['prefix'])) === $s1['prefix']) {
+                    $file = $s1['dir'] . substr($root_relative_path, strlen($s1['prefix']));
+                    if (file_exists($file)) {
+                        $file_shortcut = $file;
+                    }
                 }
-                // Shortcut for any file, that looks crawlable using simple file_get_contents
-            } elseif (strpos($root_relative_path, ".php") === FALSE) {
-                $file = realpath($site_dir . $root_relative_path);
-                if ((substr($file, 0, strlen($site_dir)) === $site_dir) && file_exists($file))
-                    $file_shortcut = $file;
             }
 
             // preflight for shortcut
