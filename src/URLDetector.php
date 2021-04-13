@@ -104,6 +104,8 @@ class URLDetector {
         if ( $detect_wpinc_assets ) {
             WsLog::l( 'DetectWPIncludesAssets::detect' );
             $arrays_to_merge[] = DetectWPIncludesAssets::detect();
+            WsLog::l( 'DetectWPAdminAssets::detect' );
+            $arrays_to_merge[] = DetectWPAdminAssets::detect();
         }
 
         $detect_vendor_cache = apply_filters( 'wp2static_detect_vendor_cache', 1 );

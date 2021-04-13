@@ -54,6 +54,9 @@ class SiteInfo {
             'includes_path' => trailingslashit( ABSPATH . WPINC ),
             'includes_url' => includes_url(),
 
+            'admin_path' => trailingslashit( ABSPATH . 'wp-admin' ),
+            'admin_url' => admin_url(),
+
             /*
                 TODO: Q on subdir:
 
