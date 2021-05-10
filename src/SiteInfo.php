@@ -35,8 +35,6 @@ class SiteInfo {
 
         // if it's a multisite use blog id in path
         if (is_multisite()){
-            $processdir .= '/' . get_current_blog_id();
-            $crawldir .= '/' . get_current_blog_id();
             $site_url = trailingslashit( network_home_url( '' ) );
         }
 

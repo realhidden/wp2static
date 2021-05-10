@@ -150,7 +150,6 @@ class Crawler {
         );
         // get difference between home and uploads URL
 
-
         foreach ( $crawlable_paths as $root_relative_path ) {
             $crawled_contents = '';
             $page_hash = '';
@@ -181,7 +180,7 @@ class Crawler {
             }
 
             if (!is_null($file_shortcut)){
-                WsLog::l('File shortcut for ' . $root_relative_path);
+                // WsLog::l('File shortcut for ' . $root_relative_path);
                 $status_code = 200;
                 $redirect_to = null;
             }else {
@@ -266,7 +265,7 @@ class Crawler {
 
             // incrementally log crawl progress
             if ( $crawled % 300 === 0 ) {
-                $notice = "Crawling progress: $crawled crawled, $cache_hits skipped (cached).";
+                $notice = "Crawling progress: $crawled / " . count($crawlable_paths) . " crawled, $cache_hits skipped (cached).";
                 WsLog::l( $notice );
             }
         }
