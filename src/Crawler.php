@@ -182,6 +182,8 @@ class Crawler {
 
             if (!is_null($file_shortcut)){
                 WsLog::l('File shortcut for ' . $root_relative_path);
+                $status_code = 200;
+                $redirect_to = null;
             }else {
                 $absolute_uri = new URL( $this->site_path . $root_relative_path );
                 $url = $absolute_uri->get();
