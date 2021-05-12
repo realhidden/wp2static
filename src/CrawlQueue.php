@@ -71,10 +71,12 @@ class CrawlQueue {
         $table_name = $wpdb->prefix . 'wp2static_urls';
 
         $rows = array();
+        // The length section is required, there can be a bug where /test is crawled before /test/test2, and
+        // on an OS + filesystem that does not support a file and a dir having the same name, it can blow up the deploy
         if (!is_null($offset) && !is_null($limit)) {
-            $rows = $wpdb->get_results("SELECT id, url FROM $table_name ORDER by url ASC LIMIT $offset,$limit");
+            $rows = $wpdb->get_results("SELECT id, url FROM $table_name ORDER BY LENGTH(url) DESC, id DESC LIMIT $offset,$limit");
         }else{
-            $rows = $wpdb->get_results("SELECT id, url FROM $table_name ORDER by url ASC");
+            $rows = $wpdb->get_results("SELECT id, url FROM $table_name ORDER BY LENGTH(url) DESC, id DESC");
         }
 
         foreach ( $rows as $row ) {
