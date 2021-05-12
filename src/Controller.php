@@ -644,6 +644,10 @@ class Controller {
 
         if (is_null($stage) || $stage === 2) {
             self::wp2staticCrawl();
+            // if we do the crawl, regrab urls after first round (autooptimize can generate files during crawl)
+            $detected_count = URLDetector::detectURLs();
+            WsLog::l("Second round of URL detection completed ($detected_count URLs detected)");
+            self::wp2staticCrawl();
         }
 
         if (is_null($stage) || $stage === 3) {
