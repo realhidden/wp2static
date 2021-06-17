@@ -71,12 +71,7 @@ select.wp2static-select {
             </tr>
             <tr>
                 <td>Generated Static Site</td>
-                <td><?php echo $view['exportedSiteFileCount']; ?> files, using <?php echo $view['exportedSiteDiskSpace']; ?>
-                    <br>
-
-                    <a href="file://<?php echo $view['uploads_path']; ?>wp2static-exported-site" />Path</a>
-
-                </td>
+                <td></td>
                 <td>
                     <form
                         name="wp2static-static-site-delete"
@@ -97,11 +92,7 @@ select.wp2static-select {
             </tr>
             <tr>
                 <td>Post-processed Static Site</td>
-                <td><?php echo $view['processedSiteFileCount']; ?> files, using <?php echo $view['processedSiteDiskSpace']; ?>
-                    <br>
-
-                    <a href="file://<?php echo $view['uploads_path']; ?>wp2static-processed-site" />Path</a>
-                </td>
+                <td></td>
                 <td>
                     <form
                         name="wp2static-post-processed-site-delete"
