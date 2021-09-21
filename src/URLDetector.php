@@ -18,6 +18,7 @@ class URLDetector {
      * Detect URLs within site
      */
     public static function detectURLs() : string {
+        WsLog::setPhase(WP2STATIC_PHASES::URL_DETECT);
         WsLog::l( 'Starting to detect WordPress site URLs.' );
 
         do_action(
@@ -180,6 +181,7 @@ class URLDetector {
             "Detection complete. $total_detected URLs added to Crawl Queue."
         );
 
+        WsLog::setPhase(WP2STATIC_PHASES::NO_PHASE);
         return $total_detected;
     }
 }

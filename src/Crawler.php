@@ -238,13 +238,10 @@ class Crawler {
                 // if not already cached
                 if ( CrawlCache::getUrl( $root_relative_path, $page_hash ) ) {
                     $cache_hits++;
-
                     continue;
                 }
             }
-
             $crawled++;
-
             if ( $crawled_contents ) {
                 // do some magic here - naive: if URL ends in /, save to /index.html
                 // TODO: will need love for example, XML files
@@ -290,9 +287,7 @@ class Crawler {
      */
     public function crawlURL( string $url ) : ?ResponseInterface {
         $headers = [];
-
         $auth_user = CoreOptions::getValue( 'basicAuthUser' );
-
         if ( $auth_user ) {
             $auth_password = CoreOptions::getValue( 'basicAuthPassword' );
 

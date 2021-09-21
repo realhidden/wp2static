@@ -586,23 +586,26 @@ class Controller {
 
             switch ( $job->job_type ) {
                 case 'detect':
-                    WsLog::l( 'Starting URL detection' );
-                    $detected_count = URLDetector::detectURLs();
-                    WsLog::l( "URL detection completed ($detected_count URLs detected)" );
+                    WsLog::l( WPSTATIC_PHASE_MARKERS::START,WP2STATIC_PHASES::URL_DETECT);
+                    URLDetector::detectURLs();
+                    WsLog::l( WPSTATIC_PHASE_MARKERS::END,WP2STATIC_PHASES::URL_DETECT);
                     break;
                 case 'crawl':
+                    WsLog::l( WPSTATIC_PHASE_MARKERS::START,WP2STATIC_PHASES::CRAWL);
                     self::wp2staticCrawl();
+                    WsLog::l( WPSTATIC_PHASE_MARKERS::END,WP2STATIC_PHASES::CRAWL);
                     break;
                 case 'post_process':
-                    WsLog::l( 'Starting post-processing' );
+                    WsLog::l( WPSTATIC_PHASE_MARKERS::START,WP2STATIC_PHASES::POST_PROCESS);
                     $post_processor = new PostProcessor();
                     $processed_site_dir =
                         SiteInfo::getPath( 'processed_site' );
                     $processed_site = new ProcessedSite();
                     $post_processor->processStaticSite( StaticSite::getPath() );
-                    WsLog::l( 'Post-processing completed' );
+                    WsLog::l( WPSTATIC_PHASE_MARKERS::END,WP2STATIC_PHASES::POST_PROCESS);
                     break;
                 case 'deploy':
+                    WsLog::l( WPSTATIC_PHASE_MARKERS::START,WP2STATIC_PHASES::DEPLOY);
                     $deployer = Addons::getDeployer();
 
                     if ( ! $deployer ) {
@@ -615,9 +618,11 @@ class Controller {
                             $deployer
                         );
                     }
+                    WsLog::l( WPSTATIC_PHASE_MARKERS::END,WP2STATIC_PHASES::DEPLOY);
+                    WsLog::l( WPSTATIC_PHASE_MARKERS::START,WP2STATIC_PHASES::POST_DEPLOY);
                     WsLog::l( 'Starting post-deployment actions' );
                     do_action( 'wp2static_post_deploy_trigger', $deployer );
-
+                    WsLog::l( WPSTATIC_PHASE_MARKERS::END,WP2STATIC_PHASES::POST_DEPLOY);
                     break;
                 default:
                     WsLog::l( 'Trying to process unknown job type' );
@@ -635,32 +640,36 @@ class Controller {
             $stage = (int)$_REQUEST['stage'];
         }
 
-        WsLog::l( 'Running WP2Static in Headless mode' );
+        WsLog::l( WPSTATIC_PHASE_MARKERS::DEPLOY_START,WP2STATIC_PHASES::NO_PHASE);
+
+        WsLog::l( 'Deploy start' );
         if (is_null($stage) || $stage === 1) {
-            WsLog::l('Starting URL detection');
+            WsLog::l( WPSTATIC_PHASE_MARKERS::START,WP2STATIC_PHASES::URL_DETECT);
             $detected_count = URLDetector::detectURLs();
-            WsLog::l("URL detection completed ($detected_count URLs detected)");
+            $detected_count = URLDetector::detectURLs();
+            WsLog::l( WPSTATIC_PHASE_MARKERS::END,WP2STATIC_PHASES::URL_DETECT);
         }
 
         if (is_null($stage) || $stage === 2) {
             self::wp2staticCrawl();
             // if we do the crawl, regrab urls after first round (autooptimize can generate files during crawl)
-            $detected_count = URLDetector::detectURLs();
-            WsLog::l("Second round of URL detection completed ($detected_count URLs detected)");
+            WsLog::l( WPSTATIC_PHASE_MARKERS::START,WP2STATIC_PHASES::CRAWL);
             self::wp2staticCrawl();
+            WsLog::l( WPSTATIC_PHASE_MARKERS::END,WP2STATIC_PHASES::CRAWL);
         }
 
         if (is_null($stage) || $stage === 3) {
-            WsLog::l('Starting post-processing');
+            WsLog::l( WPSTATIC_PHASE_MARKERS::START,WP2STATIC_PHASES::POST_PROCESS);
             $post_processor = new PostProcessor();
             $processed_site_dir =
                 SiteInfo::getPath( 'processed_site' ) ;
             $processed_site = new ProcessedSite();
             $post_processor->processStaticSite( StaticSite::getPath() );
-            WsLog::l( 'Post-processing completed' );
+            WsLog::l( WPSTATIC_PHASE_MARKERS::END,WP2STATIC_PHASES::POST_PROCESS);
         }
 
         if (is_null($stage) || $stage === 4) {
+            WsLog::l( WPSTATIC_PHASE_MARKERS::START,WP2STATIC_PHASES::DEPLOY);
             $deployer = Addons::getDeployer();
 
             if (!$deployer) {
@@ -673,11 +682,15 @@ class Controller {
                     $deployer
                 );
             }
+            WsLog::l( WPSTATIC_PHASE_MARKERS::END,WP2STATIC_PHASES::DEPLOY);
         }
         if (is_null($stage) || $stage === 5) {
-            WsLog::l('Starting post-deployment actions');
+            WsLog::l( WPSTATIC_PHASE_MARKERS::START,WP2STATIC_PHASES::POST_DEPLOY);
             do_action('wp2static_post_deploy_trigger', $deployer);
+            WsLog::l( WPSTATIC_PHASE_MARKERS::END,WP2STATIC_PHASES::POST_DEPLOY);
         }
+
+        WsLog::l( WPSTATIC_PHASE_MARKERS::DEPLOY_END,WP2STATIC_PHASES::NO_PHASE);
 
 
         // return stats in case of ajax call
@@ -801,11 +814,7 @@ class Controller {
      */
     public static function wp2staticPollLog() : void {
         check_ajax_referer( 'wp2static-run-page', 'security' );
-
-        $logs = WsLog::poll();
-
-        echo $logs;
-
+        wp_send_json(WsLog::poll());
         wp_die();
     }
 
