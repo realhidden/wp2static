@@ -644,13 +644,10 @@ class Controller {
         if (is_null($stage) || $stage === 1) {
             WsLog::l( WPSTATIC_PHASE_MARKERS::START,WP2STATIC_PHASES::URL_DETECT);
             $detected_count = URLDetector::detectURLs();
-            $detected_count = URLDetector::detectURLs();
             WsLog::l( WPSTATIC_PHASE_MARKERS::END,WP2STATIC_PHASES::URL_DETECT);
         }
 
         if (is_null($stage) || $stage === 2) {
-            self::wp2staticCrawl();
-            // if we do the crawl, regrab urls after first round (autooptimize can generate files during crawl)
             WsLog::l( WPSTATIC_PHASE_MARKERS::START,WP2STATIC_PHASES::CRAWL);
             self::wp2staticCrawl();
             WsLog::l( WPSTATIC_PHASE_MARKERS::END,WP2STATIC_PHASES::CRAWL);

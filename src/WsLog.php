@@ -158,11 +158,11 @@ class WsLog {
             $lastPhase = $markers[0];
 
             // parsed + markers are the last lines per phase
-            if ($parse[1] === WPSTATIC_PHASE_MARKERS::END){
-                $ret[] = array("time" => $line->time, "finished" => true);
+            if ($parsed[1] === WPSTATIC_PHASE_MARKERS::END){
+                $ret[$lastPhase] = array("time" => $line->time, "finished" => true);
                 continue;
             }
-            if ($parse[1] === WPSTATIC_PHASE_MARKERS::START){
+            if ($parsed[1] === WPSTATIC_PHASE_MARKERS::START){
                 $ret[$lastPhase] = array("time" => $line->time, "finished" => false);
                 continue;
             }

@@ -122,6 +122,7 @@ class Crawler {
          */
 
         $crawlable_paths = CrawlQueue::getCrawlablePaths($offset, $limit);
+        WsLog::setAllItemCount(count($crawlable_paths));
         $site_url = SiteInfo::getUrl( 'site' );
         $site_dir = SiteInfo::getPath('site');
 
@@ -151,6 +152,7 @@ class Crawler {
         // get difference between home and uploads URL
 
         foreach ( $crawlable_paths as $root_relative_path ) {
+            $crawled++;
             $crawled_contents = '';
             $page_hash = '';
 
@@ -189,7 +191,7 @@ class Crawler {
                 $response = $this->crawlURL($url);
 
                 if (!$response) {
-                    WsLog::l('Error for URL ' . $root_relative_path);
+                    WsLog::l('Error for URL ' . $root_relative_path, WP2STATIC_PHASES::CRAWL, $crawled);
                     continue;
                 }
 
@@ -197,10 +199,10 @@ class Crawler {
                 $status_code = $response->getStatusCode();
 
                 if ($status_code === 200) {
-                    WsLog::l('Crawled ' . $root_relative_path);
+                    WsLog::l('Crawled ' . $root_relative_path, WP2STATIC_PHASES::CRAWL, $crawled);
                 }
                 if ($status_code === 404) {
-                    WsLog::l('404 for URL ' . $root_relative_path);
+                    WsLog::l('404 for URL ' . $root_relative_path, WP2STATIC_PHASES::CRAWL, $crawled);
                     CrawlCache::rmUrl($root_relative_path);
                     $crawled_contents = null;
                 } elseif (in_array($status_code, WP2STATIC_REDIRECT_CODES)) {
@@ -241,7 +243,6 @@ class Crawler {
                     continue;
                 }
             }
-            $crawled++;
             if ( $crawled_contents ) {
                 // do some magic here - naive: if URL ends in /, save to /index.html
                 // TODO: will need love for example, XML files
@@ -263,12 +264,13 @@ class Crawler {
             // incrementally log crawl progress
             if ( $crawled % 300 === 0 ) {
                 $notice = "Crawling progress: $crawled / " . count($crawlable_paths) . " crawled, $cache_hits skipped (cached).";
-                WsLog::l( $notice );
+                WsLog::l( $notice, WP2STATIC_PHASES::CRAWL, $crawled );
             }
         }
 
         WsLog::l(
-            "Crawling complete. $crawled crawled, $cache_hits skipped (cached)."
+            "Crawling complete. $crawled crawled, $cache_hits skipped (cached).",
+            WP2STATIC_PHASES::CRAWL, $crawled
         );
 
         $args = [
