@@ -8,7 +8,7 @@ class WP2STATIC_PHASES
     const CRAWL = 'CRAWL';
     const POST_PROCESS = 'POST_PROCESS';
     const DEPLOY = 'DEPLOY';
-    const POST_DEPLOY = 'DEPLOY';
+    const POST_DEPLOY = 'POST_DEPLOY';
     const NO_PHASE = '';
 };
 
@@ -167,7 +167,7 @@ class WsLog {
                 continue;
             }
             // we need to pass the percentage as well
-            $ret[$lastPhase] = array("time" => $line->time, "finished" => false, "progress"=>$markers[1]);
+            $ret[$lastPhase] = array("time" => $line->time, "finished" => false, "progress"=>count($markers) < 2 ? false : $markers[1]);
         }
 
         return $ret;

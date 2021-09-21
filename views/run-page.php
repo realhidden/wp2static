@@ -29,26 +29,17 @@ include_once(__DIR__.'/../src/WsLog.php');
         font-size: 10px;
         text-align: center;
     }
+    #wp2static-run{
+        width:calc(100% - 200px);
+    }
 </style>
 <script type="text/javascript">
-var PHASE_POLL_INTERVAL = 1000;
+var PHASE_POLL_INTERVAL = 3000;
+var phase_update_timeout = 0;
 
 jQuery(document).ready(function($){
-    function responseErrorHandler( jqXHR, textStatus, errorThrown ) {
-        $("#wp2static-spinner").removeClass("is-active");
-        $("#wp2static-run" ).prop('disabled', false);
-
-        console.log(errorThrown);
-        console.log(jqXHR.responseText);
-
-        alert(`${jqXHR.status} error code returned from server.
-Please check your server's error logs or try increasing your max_execution_time limit in PHP if this consistently fails after the same duration.
-More information of the error may be logged in your browser's console.`);
-    }
-
     $( "#wp2static-run" ).click(function() {
-        $("#wp2static-spinner").addClass("is-active");
-        $("#wp2static-run" ).prop('disabled', true);
+       $("#wp2static-run" ).prop('disabled', true);
 
         var run_data = {
             action: 'wp2static_run',
@@ -60,6 +51,11 @@ More information of the error may be logged in your browser's console.`);
             delete run_data['stage'];
         }else{
             run_data['stage'] = parseInt(stage,10);
+        }
+        if ($("#wp2static-stage-only").prop('checked')){
+            run_data['only-stage'] = "1";
+        }else{
+            delete run_data['only-stage'];
         }
 
         var offset = $("#wp2static-offset").val();
@@ -78,10 +74,9 @@ More information of the error may be logged in your browser's console.`);
             data: run_data,
             timeout: 0,
             success: function() {
-                $("#wp2static-spinner").removeClass("is-active");
                 $("#wp2static-run" ).prop('disabled', false);
             },
-            error: responseErrorHandler
+            error: console.log
         });
 
     });
@@ -127,26 +122,31 @@ More information of the error may be logged in your browser's console.`);
             }catch(err){
                 console.log(err);
             }
-            setTimeout(pollPhases,PHASE_POLL_INTERVAL);
+
+            $.post(ajaxurl, {
+                dataType: 'json',
+                action: 'wp2static_poll_log',
+                startRow: 0,
+                security: '<?php echo $run_nonce; ?>',
+            }, function(response) {
+                // map response to lines
+                var responseText = response.map(function(e){ return e.time+": "+e.log+"\n"}).reduce(function(a,b){ return a + b},"");
+                $('#wp2static-run-log').val(responseText);
+                if (phase_update_timeout !== 'dontupdate') {
+                    phase_update_timeout = setTimeout(pollPhases, PHASE_POLL_INTERVAL);
+                }
+            });
         });
     }
     pollPhases();
-
-    // poll normal logs on refresh logs
-    $( "#wp2static-poll-logs" ).click(function() {
-        $("#wp2static-poll-logs" ).prop('disabled', true);
-        $.post(ajaxurl, {
-            dataType: 'json',
-            action: 'wp2static_poll_log',
-            startRow: 0,
-            security: '<?php echo $run_nonce; ?>',
-        }, function(response) {
-            // map response to lines
-            var responseText = response.map(function(e){ return e.time+": "+e.log+"\n"}).reduce(function(a,b){ return a + b},"");
-            $('#wp2static-run-log').val(responseText);
-            $("#wp2static-poll-logs" ).prop('disabled', false);
-        });
-    });
+    document.addEventListener('visibilitychange', function(){
+        if (document.hidden === true){
+            clearTimeout(phase_update_timeout);
+            phase_update_timeout = 'dontupdate';
+        }else{
+            phase_update_timeout = setTimeout(pollPhases,0);
+        }
+    })
 
     $( "#wp2static-clear-logs" ).click(function() {
         $("#wp2static-clear-logs" ).prop('disabled', true);
@@ -187,6 +187,8 @@ More information of the error may be logged in your browser's console.`);
         <?php } ?>
     </div>
 
+    <button class="button button-primary" id="wp2static-run">Generate static site</button>
+    <hr/>
     <select id="wp2static-stage">
         <option value="null">All stages</option>
         <option value="1">URL detection</option>
@@ -195,17 +197,14 @@ More information of the error may be logged in your browser's console.`);
         <option value="4">Deploy</option>
         <option value="5">Post deploy action</option>
     </select>
-    <input type="text" placeholder="offset" id="wp2static-offset">
-    <input type="text" placeholder="limit" id="wp2static-limit">
-    <button class="button button-primary" id="wp2static-run">Generate static site</button>
-
-    <div id="wp2static-spinner" class="spinner" style="padding:2px;float:none;"></div>
-    <br>
-
-    <button class="button" id="wp2static-poll-logs">Refresh logs</button>
+    <label for="wp2static-stage-only">
+        <input type="checkbox" id="wp2static-stage-only" name="wp2static-stage-only">
+        Only one stage
+    </label>
+    <input type="text" placeholder="offset" id="wp2static-offset" style="width:70px">
+    <input type="text" placeholder="limit" id="wp2static-limit" style="width:70px">
     <button class="button" id="wp2static-clear-logs">Clear logs</button>
-    <br>
-    <br>
+    <hr/>
     <textarea id="wp2static-run-log" rows=30 style="width: calc(100% - 200px)">
     Logs will appear here on completion or click "Refresh logs" to check progress
     </textarea>

@@ -639,6 +639,7 @@ class Controller {
         if (isset($_REQUEST['stage'])){
             $stage = (int)$_REQUEST['stage'];
         }
+        $only_step = isset($_REQUEST['only-stage']);
 
         WsLog::l( WPSTATIC_PHASE_MARKERS::DEPLOY_START,WP2STATIC_PHASES::NO_PHASE);
         if (is_null($stage) || $stage === 1) {
@@ -647,13 +648,13 @@ class Controller {
             WsLog::l( WPSTATIC_PHASE_MARKERS::END,WP2STATIC_PHASES::URL_DETECT);
         }
 
-        if (is_null($stage) || $stage === 2) {
+        if (is_null($stage) || (($stage === 2 && $only_step) || ($stage <= 2 && !$only_step))) {
             WsLog::l( WPSTATIC_PHASE_MARKERS::START,WP2STATIC_PHASES::CRAWL);
             self::wp2staticCrawl();
             WsLog::l( WPSTATIC_PHASE_MARKERS::END,WP2STATIC_PHASES::CRAWL);
         }
 
-        if (is_null($stage) || $stage === 3) {
+        if (is_null($stage) || (($stage === 3 && $only_step) || ($stage <= 3 && !$only_step))) {
             WsLog::l( WPSTATIC_PHASE_MARKERS::START,WP2STATIC_PHASES::POST_PROCESS);
             $post_processor = new PostProcessor();
             $processed_site_dir =
@@ -663,7 +664,7 @@ class Controller {
             WsLog::l( WPSTATIC_PHASE_MARKERS::END,WP2STATIC_PHASES::POST_PROCESS);
         }
 
-        if (is_null($stage) || $stage === 4) {
+        if (is_null($stage) || (($stage === 4 && $only_step) || ($stage <= 4 && !$only_step))) {
             WsLog::l( WPSTATIC_PHASE_MARKERS::START,WP2STATIC_PHASES::DEPLOY);
             $deployer = Addons::getDeployer();
 
@@ -679,7 +680,7 @@ class Controller {
             }
             WsLog::l( WPSTATIC_PHASE_MARKERS::END,WP2STATIC_PHASES::DEPLOY);
         }
-        if (is_null($stage) || $stage === 5) {
+        if (is_null($stage) || (($stage === 5 && $only_step) || ($stage <= 5 && !$only_step))) {
             WsLog::l( WPSTATIC_PHASE_MARKERS::START,WP2STATIC_PHASES::POST_DEPLOY);
             do_action('wp2static_post_deploy_trigger', $deployer);
             WsLog::l( WPSTATIC_PHASE_MARKERS::END,WP2STATIC_PHASES::POST_DEPLOY);
