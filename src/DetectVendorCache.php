@@ -52,6 +52,10 @@ class DetectVendorCache {
                     continue;
                 }
 
+                // ignore object cache for w3
+                if (strpos($filename, '/object/') !== false) {
+                    continue;
+                }
 
                 // Standardise all paths to use / (Windows support)
                 $filename = str_replace( '\\', '/', $filename );
