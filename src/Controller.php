@@ -641,8 +641,6 @@ class Controller {
         }
 
         WsLog::l( WPSTATIC_PHASE_MARKERS::DEPLOY_START,WP2STATIC_PHASES::NO_PHASE);
-
-        WsLog::l( 'Deploy start' );
         if (is_null($stage) || $stage === 1) {
             WsLog::l( WPSTATIC_PHASE_MARKERS::START,WP2STATIC_PHASES::URL_DETECT);
             $detected_count = URLDetector::detectURLs();
@@ -815,6 +813,15 @@ class Controller {
     public static function wp2staticPollLog() : void {
         check_ajax_referer( 'wp2static-run-page', 'security' );
         wp_send_json(WsLog::poll());
+        wp_die();
+    }
+
+    /**
+     * Give logs to UI in a special form to process phases
+     */
+    public static function wp2staticPollPhases() : void {
+        //check_ajax_referer( 'wp2static-run-page', 'security' );
+        wp_send_json(WsLog::pollPhases());
         wp_die();
     }
 

@@ -112,11 +112,65 @@ class WsLog {
         }
 
         if ($withFiltering) {
-            $logs = $wpdb->get_results("SELECT time, log FROM $table_name WHERE log NOT LIKE '%WPSTATIC_PHASE_MARKERS_%' AND id > ".(int)$lastid." ORDER BY id DESC LIMIT 5000");
+            $logs = $wpdb->get_results("SELECT time, log FROM $table_name WHERE log NOT LIKE '%WPSTATIC_PHASE_MARKERS_%' AND id >= ".(int)$lastid." ORDER BY id DESC LIMIT 5000");
         }else{
-            $logs = $wpdb->get_results("SELECT time, log FROM $table_name WHERE log id > ".(int)$lastid." ORDER BY id");
+            $logs = $wpdb->get_results("SELECT time, log FROM $table_name WHERE id >= ".(int)$lastid." ORDER BY id DESC");
         }
         return $logs;
+    }
+
+    public static function pollPhases()
+    {
+        // this is a list of phases (+ DEPLOY START + DEPLOY END) each key contains the time + progress + finished as bool
+        $ret = array();
+        $loglines = self::getAll(false);
+        // parse loglines and try to figure out what to keep
+        $lastPhase = '';
+
+        foreach ($loglines as $line) {
+            $l = $line->log;
+            if (strpos($l, WPSTATIC_PHASE_MARKERS::DEPLOY_END) !== FALSE) {
+                // deploy ended
+                $ret[WPSTATIC_PHASE_MARKERS::DEPLOY_END] = array("time" => $line->time, "finished" => true);
+                continue;
+            }
+            if (strpos($l, WPSTATIC_PHASE_MARKERS::DEPLOY_START) !== FALSE) {
+                // deploy started
+                $ret[WPSTATIC_PHASE_MARKERS::DEPLOY_START] = array("time" => $line->time, "finished" => true);
+                continue;
+            }
+            // try to parse line if it starts with a phase
+            if (strlen($l) == 0 || $l[0] !== '[') {
+                continue;
+            }
+            $parsed = explode('] ', substr($l, 1), 2);
+            if (count($parsed) != 2) {
+                continue;
+            }
+            if ($parsed[0] === ''){
+                continue;
+            }
+            $markers = explode(" | ", $parsed[0], 2);
+
+            if ($markers[0] === $lastPhase){
+                continue;
+            }
+            $lastPhase = $markers[0];
+
+            // parsed + markers are the last lines per phase
+            if ($parse[1] === WPSTATIC_PHASE_MARKERS::END){
+                $ret[] = array("time" => $line->time, "finished" => true);
+                continue;
+            }
+            if ($parse[1] === WPSTATIC_PHASE_MARKERS::START){
+                $ret[$lastPhase] = array("time" => $line->time, "finished" => false);
+                continue;
+            }
+            // we need to pass the percentage as well
+            $ret[$lastPhase] = array("time" => $line->time, "finished" => false, "progress"=>$markers[1]);
+        }
+
+        return $ret;
     }
 
     /**

@@ -65,6 +65,13 @@ class WordPressAdmin {
         );
 
         add_action(
+            'wp_ajax_wp2static_poll_phases',
+            [ Controller::class, 'wp2staticPollPhases' ],
+            10,
+            0
+        );
+
+        add_action(
             'wp_ajax_wp2static_clear_log',
             [ Controller::class, 'wp2staticClearLog' ],
             10,
