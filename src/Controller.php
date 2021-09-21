@@ -642,16 +642,20 @@ class Controller {
         $only_step = isset($_REQUEST['only-stage']);
 
         WsLog::l( WPSTATIC_PHASE_MARKERS::DEPLOY_START,WP2STATIC_PHASES::NO_PHASE);
-        if (is_null($stage) || $stage === 1) {
+        if (is_null($stage) || (($stage === 1 && $only_step) || ($stage <= 1 && !$only_step))) {
             WsLog::l( WPSTATIC_PHASE_MARKERS::START,WP2STATIC_PHASES::URL_DETECT);
             $detected_count = URLDetector::detectURLs();
             WsLog::l( WPSTATIC_PHASE_MARKERS::END,WP2STATIC_PHASES::URL_DETECT);
+            unset($_REQUEST['limit']);
+            unset($_REQUEST['offset']);
         }
 
         if (is_null($stage) || (($stage === 2 && $only_step) || ($stage <= 2 && !$only_step))) {
             WsLog::l( WPSTATIC_PHASE_MARKERS::START,WP2STATIC_PHASES::CRAWL);
             self::wp2staticCrawl();
             WsLog::l( WPSTATIC_PHASE_MARKERS::END,WP2STATIC_PHASES::CRAWL);
+            unset($_REQUEST['limit']);
+            unset($_REQUEST['offset']);
         }
 
         if (is_null($stage) || (($stage === 3 && $only_step) || ($stage <= 3 && !$only_step))) {
@@ -662,6 +666,8 @@ class Controller {
             $processed_site = new ProcessedSite();
             $post_processor->processStaticSite( StaticSite::getPath() );
             WsLog::l( WPSTATIC_PHASE_MARKERS::END,WP2STATIC_PHASES::POST_PROCESS);
+            unset($_REQUEST['limit']);
+            unset($_REQUEST['offset']);
         }
 
         if (is_null($stage) || (($stage === 4 && $only_step) || ($stage <= 4 && !$only_step))) {
@@ -679,11 +685,15 @@ class Controller {
                 );
             }
             WsLog::l( WPSTATIC_PHASE_MARKERS::END,WP2STATIC_PHASES::DEPLOY);
+            unset($_REQUEST['limit']);
+            unset($_REQUEST['offset']);
         }
         if (is_null($stage) || (($stage === 5 && $only_step) || ($stage <= 5 && !$only_step))) {
             WsLog::l( WPSTATIC_PHASE_MARKERS::START,WP2STATIC_PHASES::POST_DEPLOY);
             do_action('wp2static_post_deploy_trigger', $deployer);
             WsLog::l( WPSTATIC_PHASE_MARKERS::END,WP2STATIC_PHASES::POST_DEPLOY);
+            unset($_REQUEST['limit']);
+            unset($_REQUEST['offset']);
         }
 
         WsLog::l( WPSTATIC_PHASE_MARKERS::DEPLOY_END,WP2STATIC_PHASES::NO_PHASE);

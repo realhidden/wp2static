@@ -80,7 +80,6 @@ class Crawler {
      */
     public function crawlSite( string $static_site_path ) : void {
         global $wpdb;
-        $crawled = 0;
         $cache_hits = 0;
 
         // Add some limits for the crawler if present
@@ -93,6 +92,8 @@ class Crawler {
         if (isset($_REQUEST['limit'])){
             $limit = (int)$_REQUEST['limit'];
         }
+
+        $crawled = $offset;
 
         if (!is_null($offset) && !is_null($limit)) {
             WsLog::l("Starting to crawl detected URLs ($offset - $limit)");
@@ -122,7 +123,7 @@ class Crawler {
          */
 
         $crawlable_paths = CrawlQueue::getCrawlablePaths($offset, $limit);
-        WsLog::setAllItemCount(count($crawlable_paths));
+        WsLog::setAllItemCount(count($crawlable_paths) + $offset);
         $site_url = SiteInfo::getUrl( 'site' );
         $site_dir = SiteInfo::getPath('site');
 
@@ -152,6 +153,11 @@ class Crawler {
         // get difference between home and uploads URL
 
         foreach ( $crawlable_paths as $root_relative_path ) {
+            /*
+            if ($crawled > 5 && rand(0,10)>8){
+                // random die for testing
+                die();
+            }*/
             $crawled++;
             $crawled_contents = '';
             $page_hash = '';
@@ -182,7 +188,7 @@ class Crawler {
             }
 
             if (!is_null($file_shortcut)){
-                // WsLog::l('File shortcut for ' . $root_relative_path);
+                WsLog::l('File shortcut for ' . $root_relative_path, WP2STATIC_PHASES::CRAWL, $crawled);
                 $status_code = 200;
                 $redirect_to = null;
             }else {

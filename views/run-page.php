@@ -32,12 +32,42 @@ include_once(__DIR__.'/../src/WsLog.php');
     #wp2static-run{
         width:calc(100% - 200px);
     }
+
+    #wp2static-error{
+        width:calc(100% - 225px);
+        margin-left: 200px
+    }
 </style>
 <script type="text/javascript">
 var PHASE_POLL_INTERVAL = 3000;
+var RETRY_DELAY = 15000;
+var STUCK_LIMIT = PHASE_POLL_INTERVAL * 3 + 5000;
 var phase_update_timeout = 0;
+var retry_timeout = 'notimeout';
 
 jQuery(document).ready(function($){
+
+    function startProcess(run_data){
+        $("#wp2static-error").hide();
+        $.ajax({
+            url: ajaxurl,
+            type: 'POST',
+            data: run_data,
+            timeout: 0,
+            success: function() {
+                $("#wp2static-run" ).prop('disabled', false);
+            },
+            error: console.log
+        });
+    }
+
+    $("#wp2static-error-cancel").click(function(e){
+        e.preventDefault();
+        $("#wp2static-error").hide();
+        clearTimeout(retry_timeout);
+    });
+
+
     $( "#wp2static-run" ).click(function() {
        $("#wp2static-run" ).prop('disabled', true);
 
@@ -68,16 +98,7 @@ jQuery(document).ready(function($){
             delete run_data['limit'];
         }
 
-        $.ajax({
-            url: ajaxurl,
-            type: 'POST',
-            data: run_data,
-            timeout: 0,
-            success: function() {
-                $("#wp2static-run" ).prop('disabled', false);
-            },
-            error: console.log
-        });
+        startProcess(run_data);
 
     });
 
@@ -110,15 +131,123 @@ jQuery(document).ready(function($){
             p.find(".progress div").text(r.progress);
         });
     }
+
+    function getPhaseListReverse(){
+        var phaseList = [];
+        var phases = $(".wp2static-progress .phase");
+        phases.each(function (i, item) {
+            phaseList.push($(item).data('phase'));
+        });
+        // first and last items are irrelevant
+        phaseList = phaseList.slice(1,phaseList.length-1);
+        phaseList.reverse();
+        return phaseList;
+    }
+
+    function showTimeoutError(message, retryData = false){
+        // show message
+        $("#wp2static-error").show();
+        $("#wp2static-error p").text(message);
+
+        if (retryData === false){
+            return;
+        }
+        // timeout for retry
+        clearTimeout(retry_timeout);
+        console.log(retryData);
+        retry_timeout = setTimeout(()=>{
+            startProcess(retryData);
+            retry_timeout = 'notimeout';
+        },RETRY_DELAY);
+    }
+
+    var stuckTime = 0;
+    var lastLine = '';
+
+    function checkStuck(phases, loglines) {
+        // we found the deploy end, the deploy is finished
+        if (phases['WPSTATIC_PHASE_MARKERS_DEPLOYEND']) {
+            return;
+        }
+        // if we do not find a deploy start, never started
+        if (!phases['WPSTATIC_PHASE_MARKERS_DEPLOYSTART']) {
+            return;
+        }
+
+        // already showing message + retrying
+        if (retry_timeout !== 'notimeout'){
+            return;
+        }
+
+        var stuckForSure = false;
+        if (loglines.length > 0) {
+            if (loglines[0].time !== lastLine.time) {
+                lastLine = loglines[0];
+                stuckTime = new Date().getTime();
+            } else {
+                console.log("Might be stuck");
+                if (new Date().getTime() - stuckTime > STUCK_LIMIT) {
+                    // we are really stuck
+                    stuckForSure = true;
+                }
+            }
+        }
+        // just to make sure
+        if (!stuckForSure){
+            return;
+        }
+
+        // find phase
+        var phaseList = getPhaseListReverse();
+        var lastPhase = false;
+        var lastPhaseId = 0;
+        for (var i = 0; i < phaseList.length; i++) {
+            if (phases[phaseList[i]]) {
+                lastPhase = phaseList[i];
+                lastPhaseId = phaseList.length - i;
+                break;
+            }
+        }
+
+        var lastPhaseData = phases[lastPhase];
+        // if we don't have a lastPhase, we have a problem we cannot handle
+        if (lastPhaseData === false) {
+            showTimeoutError('Deployment might be stuck, but we cannot tell in which phase!');
+            return;
+        }
+
+        // let's check if lastPhase is finished, we don't know what to do
+        if (lastPhaseData.finished) {
+            showTimeoutError('Deployment might be stuck, but the last phase is still finished!');
+            return;
+        }
+
+        // no process to continue
+        if (!lastPhaseData.progress) {
+            showTimeoutError('Deployment might be stuck, last phase does not have a progress!');
+            return;
+        }
+
+        // continue the progress from the last item
+        var p = lastPhaseData.progress.split("/",2);
+        showTimeoutError('We are stuck at ' + lastPhase + ' progress: ' + lastPhaseData.progress,{
+            action: 'wp2static_run',
+            security: '<?php echo $run_nonce; ?>',
+            stage: lastPhaseId,
+            offset: parseInt(p[0],10),
+            limit: Math.max(parseInt(p[1],10),50000)
+        });
+    }
+
     function pollPhases(){
         $.post(ajaxurl, {
             dataType: 'json',
             action: 'wp2static_poll_phases',
             startRow: 0,
             security: '<?php echo $run_nonce; ?>',
-        }, function(response) {
+        }, function(phaseResponse) {
             try {
-                showPhaseResult(response);
+                showPhaseResult(phaseResponse);
             }catch(err){
                 console.log(err);
             }
@@ -134,6 +263,9 @@ jQuery(document).ready(function($){
                 $('#wp2static-run-log').val(responseText);
                 if (phase_update_timeout !== 'dontupdate') {
                     phase_update_timeout = setTimeout(pollPhases, PHASE_POLL_INTERVAL);
+
+                    // check if its stuck
+                    checkStuck(phaseResponse,response);
                 }
             });
         });
@@ -186,7 +318,10 @@ jQuery(document).ready(function($){
             </div>
         <?php } ?>
     </div>
-
+    <div class="error notice" id="wp2static-error" style="display: none">
+        <p></p>
+        <button id="wp2static-error-cancel" class="button">Cancel retry</button><br/><br/>
+    </div>
     <button class="button button-primary" id="wp2static-run">Generate static site</button>
     <hr/>
     <select id="wp2static-stage">
@@ -206,6 +341,5 @@ jQuery(document).ready(function($){
     <button class="button" id="wp2static-clear-logs">Clear logs</button>
     <hr/>
     <textarea id="wp2static-run-log" rows=30 style="width: calc(100% - 200px)">
-    Logs will appear here on completion or click "Refresh logs" to check progress
     </textarea>
 </div>
